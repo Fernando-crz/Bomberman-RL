@@ -69,3 +69,4 @@ chmod +x make_video.sh
 	self.multi_rewards = True
 	```
 - The version of `retro_env.py` in this repository (located in `library_scripts/`) is already modified to support multi-player rewards. You can copy it to the framework directory if needed.
+- Once you have the files `rom.sfc` and `rom.sha` from the integration process, you can run the scripts on Google Colab by opening the ColabAutomation.ipynb notebook, uploading the files at the `/content/` directory and running it.
