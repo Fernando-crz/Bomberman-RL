@@ -1,0 +1,38 @@
+{
+  "crop": [
+    0,
+    32,
+    0,
+    0
+  ],
+  "done": {
+    "variables": {
+      "n_alive": {
+        "op": "equal",
+        "reference": 1
+      },
+      "n_playable_alive": {
+        "op": "equal"
+      },
+      "time": {
+        "op": "equal"
+      }
+    }
+  },
+  "rewards": [
+    {
+      "variables": {
+        "n_white_bombs": {
+          "reward": 1.0
+        }
+      }
+    },
+    {
+      "variables": {
+        "n_black_bombs": {
+          "reward": 1.0
+        }
+      }
+    }
+  ]
+}

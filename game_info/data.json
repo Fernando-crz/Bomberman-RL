@@ -1,0 +1,48 @@
+{
+  "info": {
+    "is_black_alive": {
+      "address": 3456,
+      "type": "<d2"
+    },
+    "is_blue_alive": {
+      "address": 3519,
+      "type": "<d2"
+    },
+    "is_red_alive": {
+      "address": 3583,
+      "type": "<d2"
+    },
+    "is_white_alive": {
+      "address": 3392,
+      "type": "<d2"
+    },
+    "n_alive": {
+      "address": 3365,
+      "type": "|u1"
+    },
+    "n_black_bombs": {
+      "address": 3492,
+      "type": "|u1"
+    },
+    "n_blue_bombs": {
+      "address": 3556,
+      "type": "|u1"
+    },
+    "n_playable_alive": {
+      "address": 3382,
+      "type": "|u1"
+    },
+    "n_red_bombs": {
+      "address": 3620,
+      "type": "|u1"
+    },
+    "n_white_bombs": {
+      "address": 3428,
+      "type": "|u1"
+    },
+    "time": {
+      "address": 3386,
+      "type": "<d2"
+    }
+  }
+}
