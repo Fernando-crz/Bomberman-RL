@@ -1,0 +1,49 @@
+{
+  "info": {
+    "timer": {
+      "address": 3386,
+      "type": "<d2"
+    },
+    "total_player_count": {
+      "address": 3365,
+      "type": "|d1"
+    },
+    "active_player_count": {
+      "address": 3382,
+      "type": "|d1"
+    },
+    "is_p1_dead": {
+      "address": 3439,
+      "type": "|d1"
+    },
+    "is_p2_dead": {
+      "address": 3503,
+      "type": "|d1"
+    },
+    "is_p3_dead": {
+      "address": 3567,
+      "type": "|d1"
+    },
+    "is_p4_dead": {
+      "address": 3631,
+      "type": "|d1"
+    },
+    "p1_win_blink_countdown": {
+      "address": 3443,
+      "type": "<d4"
+    },
+    "p2_win_blink_countdown": {
+      "address": 3507,
+      "type": "<d4"
+    },
+    "p3_win_blink_countdown": {
+      "address": 3571,
+      "type": "<d4"
+    },
+    "p4_win_blink_countdown": {
+      "address": 3635,
+      "type": "<d4"
+    }
+  }
+}
+

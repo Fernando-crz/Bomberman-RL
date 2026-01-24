@@ -1,0 +1,56 @@
+{
+  "crop": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "done": {
+    "variables": {
+      "active_player_count": {
+        "op": "equal"
+      },
+      "timer": {
+        "op": "equal"
+      },
+      "total_player_count": {
+        "op": "equal",
+        "reference": 1
+      }
+    }
+  },
+  "rewards": [
+    {
+      "variables": {
+        "is_p1_dead": {
+          "measurement": "absolute",
+          "op": "equal",
+          "reference": 1,
+          "reward": -0.5
+        },
+        "p1_win_blink_countdown": {
+          "measurement": "absolute",
+          "op": "less-or-equal",
+          "reference": 1,
+          "reward": 1.0
+        }
+      }
+    },
+    {
+      "variables": {
+        "is_p2_dead": {
+          "measurement": "absolute",
+          "op": "equal",
+          "reference": 1,
+          "reward": -0.5
+        },
+        "p2_win_blink_countdown": {
+          "measurement": "absolute",
+          "op": "less-or-equal",
+          "reference": 1,
+          "reward": 1.0
+        }
+      }
+    }
+  ]
+}
