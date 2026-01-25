@@ -26,11 +26,13 @@ class CustomEnvironment(ParallelEnv):
         "name": "super_bomberman_ma_env_v0",
     }
 
-    def __init__(self, render_mode='rgb_array', frame_stack=0, individual_terminations=False):
+    def __init__(self, render_mode='rgb_array', frame_stack=0, 
+                 individual_terminations=False, agent_identifiers=False):
         self.possible_agents = ["player_1", "player_2"]
         self.render_mode = render_mode
         self.frame_stack = frame_stack
         self.individual_terminations = individual_terminations
+        self.agent_identifiers = agent_identifiers
         self.sr_env = None
         self.observation_stack = None
 
@@ -61,7 +63,10 @@ class CustomEnvironment(ParallelEnv):
         if self.frame_stack > 0:
             obs = np.repeat(obs[np.newaxis, ...], self.frame_stack, axis=0)
             self.observation_stack = obs
-        observations = {a: obs for a in self.agents}
+        if self.agent_identifiers:
+            observations = {a: self._encode_agent_id(obs, a) for a in self.agents}
+        else:
+            observations = {a: obs for a in self.agents}
         infos = {a: {} for a in self.agents}
         
         return observations, infos
@@ -88,9 +93,21 @@ class CustomEnvironment(ParallelEnv):
         if self.sr_env.multi_rewards:
             rewards = {}
             if 'player_1' in self.agents:
-                rewards['player_1'] = rew[0]
+                #rewards['player_1'] = rew[0]
+                if info['is_white_alive'] == 1943 and info["n_playable_alive"] == 1:
+                    rewards['player_1'] = 2
+                elif info['is_white_alive'] != 1943:
+                    rewards['player_1'] = -1
+                else:
+                    rewards['player_1'] = 0
             if 'player_2' in self.agents:
-                rewards['player_2'] = rew[1]
+                #rewards['player_2'] = rew[1]
+                if info['is_black_alive'] == 1943 and info["n_playable_alive"] == 1:
+                    rewards['player_1'] = 2
+                elif info['is_white_alive'] != 1943:
+                    rewards['player_1'] = -1
+                else:
+                    rewards['player_1'] = 0
         else:
             rewards = {a: rew for a in self.agents}
 
@@ -112,7 +129,10 @@ class CustomEnvironment(ParallelEnv):
             self.observation_stack = np.roll(self.observation_stack, shift=-1, axis=0)
             self.observation_stack[-1] = obs
             obs = self.observation_stack
-        observations = {a: obs for a in self.agents}
+        if self.agent_identifiers:
+            observations = {a: self._encode_agent_id(obs, a) for a in self.agents}
+        else:
+            observations = {a: obs for a in self.agents}
         infos = {a: {} for a in self.agents}
 
         # Live agents
@@ -123,13 +143,25 @@ class CustomEnvironment(ParallelEnv):
     def render(self):
         return self.sr_env.render()
 
+    def _encode_agent_id(self, obs, agent):
+        id_value = 0 if agent == "player_1" else 255
+        if self.frame_stack > 0:
+            stack, h, w, _ = obs.shape
+            id_plane = np.full((stack, h, w, 1), id_value, dtype=np.uint8)
+            return np.concatenate([obs, id_plane], axis=-1)
+        else:
+            h, w, _ = obs.shape
+            id_plane = np.full((h, w, 1), id_value, dtype=np.uint8)
+            return np.concatenate([obs, id_plane], axis=-1)
+
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
     # If your spaces change over time, remove this line (disable caching).
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
+        channels = 4 if self.agent_identifiers else 3
         if self.frame_stack > 0:
-            return Box(low=0, high=255, shape=(self.frame_stack, 192, 256, 3), dtype=np.uint8)
-        return Box(low=0, high=255, shape=(192, 256, 3), dtype=np.uint8)
+            return Box(low=0, high=255, shape=(self.frame_stack, 192, 256, channels), dtype=np.uint8)
+        return Box(low=0, high=255, shape=(192, 256, channels), dtype=np.uint8)
 
     # If your spaces change over time, remove this line (disable caching).
     @functools.lru_cache(maxsize=None)

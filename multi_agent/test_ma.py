@@ -18,3 +18,7 @@ if __name__ == "__main__":
     env_stack_ind = CustomEnvironment(frame_stack=10, individual_terminations=True)
     parallel_api_test(env_stack_ind, num_cycles=1_000_000)
     env_stack_ind.close()
+
+    env_stack_ind_ident = CustomEnvironment(frame_stack=10, individual_terminations=True, agent_identifiers=True)
+    parallel_api_test(env_stack_ind_ident, num_cycles=1_000_000)
+    env_stack_ind_ident.close()
