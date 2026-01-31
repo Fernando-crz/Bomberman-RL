@@ -9,7 +9,7 @@ HEIGHT, WIDTH, CHANNELS = 192, 256, 3
 class BombermanParallelEnv(ParallelEnv):
     metadata = {"render_modes": ["human", "rgb_array"]}
     
-    def __init__(self, retro_env, frame_stack=1):
+    def __init__(self, retro_env):
         self.retro_env = retro_env
         
         self.possible_agents = ["player_0", "player_1"]
@@ -20,39 +20,29 @@ class BombermanParallelEnv(ParallelEnv):
             "player_1": MultiBinary(12),
         }
 
-        self.frame_stack = frame_stack
 
         self.observation_spaces = {
             "player_0": Box(
                 low=0,
                 high=255,
-                shape=(self.frame_stack, HEIGHT, WIDTH, CHANNELS),
+                shape=(HEIGHT, WIDTH, CHANNELS),
                 dtype=np.uint8
             ),
             "player_1": Box(
                 low=0,
                 high=255,
-                shape=(self.frame_stack, HEIGHT, WIDTH, CHANNELS),
+                shape=(HEIGHT, WIDTH, CHANNELS),
                 dtype=np.uint8
             ),
         }
-
-        self.observation_stack = None
     
     def reset(self, seed=None, options=None):
         obs, info = self.retro_env.reset()
 
         self.agents = self.possible_agents[:]
 
-        self._obs_stack = np.zeros(
-            (self.frame_stack, HEIGHT, WIDTH, CHANNELS),
-            dtype=np.uint8,
-        )
-
-        self._obs_stack[-1] = obs
-
         observations = {
-            agent: self._obs_stack.copy()
+            agent: obs
             for agent in self.agents
         }
 
@@ -69,15 +59,13 @@ class BombermanParallelEnv(ParallelEnv):
             actions["player_1"]
         ]).astype(np.int8)
 
-        obs, rew, terminated, truncated, info = self.retro_env.step(joint_action)
+        obs, _, _, _, info = self.retro_env.step(joint_action)
 
         # Compute observation with stacking
 
-        self._obs_stack[:-1] = self._obs_stack[1:]
-        self._obs_stack[-1] = obs
-        
         observations = {
-            agent: self._obs_stack.copy() for agent in self.agents
+            agent: obs 
+            for agent in self.agents
         }
 
         # Compute player rewards
@@ -144,10 +132,10 @@ def main():
                         use_restricted_actions=retro.Actions.ALL,
                         record='.',
                         players=2,
-                        render_mode='human')
+                        render_mode='rgb_array')
     env.multi_rewards = True
 
-    parallel_env = BombermanParallelEnv(env, frame_stack=10)
+    parallel_env = BombermanParallelEnv(env)
     
     obs, info = parallel_env.reset()
 
