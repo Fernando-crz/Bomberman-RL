@@ -11,12 +11,14 @@ name = "bomberman-rl"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "gymnasium" },
     { name = "pettingzoo" },
     { name = "stable-retro" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "gymnasium", specifier = ">=1.2.3" },
     { name = "pettingzoo", specifier = ">=1.25.0" },
     { name = "stable-retro", specifier = ">=0.9.8" },
 ]
