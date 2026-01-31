@@ -1,9 +1,7 @@
 import functools
 import random
 from copy import copy
-
 import numpy as np
-
 from gymnasium.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 import stable_retro
@@ -27,12 +25,15 @@ class CustomEnvironment(ParallelEnv):
     }
 
     def __init__(self, render_mode='rgb_array', frame_stack=0, 
-                 individual_terminations=False, agent_identifiers=False):
+                 individual_terminations=False, agent_identifiers=False,
+                 max_episode_steps=None):
         self.possible_agents = ["player_1", "player_2"]
         self.render_mode = render_mode
         self.frame_stack = frame_stack
         self.individual_terminations = individual_terminations
         self.agent_identifiers = agent_identifiers
+        self.max_episode_steps = max_episode_steps
+        self.current_step = 0
         self.sr_env = None
         self.observation_stack = None
 
@@ -58,6 +59,9 @@ class CustomEnvironment(ParallelEnv):
         for _ in range(5):
             obs, rew, terminate, truncate, _ = self.sr_env.step(no_move)
         
+        # Reset step counter
+        self.current_step = 0
+        
         # Set initial observations and infos(empty for now)
         self.agents = copy(self.possible_agents)
         if self.frame_stack > 0:
@@ -80,6 +84,9 @@ class CustomEnvironment(ParallelEnv):
             self.sr_env = None
 
     def step(self, actions):
+        # Increment step counter
+        self.current_step += 1
+        
         # Action mapping
         p1_action = discrete_to_multibinary[actions.get('player_1', 0)]
         p2_action = discrete_to_multibinary[actions.get('player_2', 0)]
@@ -90,52 +97,57 @@ class CustomEnvironment(ParallelEnv):
 
         # Rewards
         # TODO: Check info data.json variables to customize reward
+        # Build rewards for all current agents before any are removed
+        current_agents = copy(self.agents)
         if self.sr_env.multi_rewards:
             rewards = {}
-            if 'player_1' in self.agents:
+            if 'player_1' in current_agents:
                 #rewards['player_1'] = rew[0]
-                if info['is_white_alive'] == 1943 and info["n_playable_alive"] == 1:
+                if info['is_white_alive'] != 1943 and info["n_playable_alive"] == 1: # Win condition
                     rewards['player_1'] = 2
-                elif info['is_white_alive'] != 1943:
+                elif info['is_white_alive'] == 1943: # Lose condition
                     rewards['player_1'] = -1
                 else:
                     rewards['player_1'] = 0
-            if 'player_2' in self.agents:
+            if 'player_2' in current_agents:
                 #rewards['player_2'] = rew[1]
-                if info['is_black_alive'] == 1943 and info["n_playable_alive"] == 1:
-                    rewards['player_1'] = 2
-                elif info['is_white_alive'] != 1943:
-                    rewards['player_1'] = -1
+                if info['is_black_alive'] != 1943 and info["n_playable_alive"] == 1: # Win condition
+                    rewards['player_2'] = 2
+                elif info['is_black_alive'] == 1943: # Lose condition
+                    rewards['player_2'] = -1
                 else:
-                    rewards['player_1'] = 0
+                    rewards['player_2'] = 0
         else:
-            rewards = {a: rew for a in self.agents}
+            rewards = {a: rew for a in current_agents}
 
         # Terminations and truncations
+        episode_truncated = self.max_episode_steps is not None and self.current_step >= self.max_episode_steps
+        
         if self.individual_terminations:
             p1_terminated = info['is_white_alive'] == 1943 or terminated
             p2_terminated = info['is_black_alive'] == 1943 or terminated
             terminations = {}
-            if 'player_1' in self.agents:
+            if 'player_1' in current_agents:
                 terminations['player_1'] = p1_terminated
-            if 'player_2' in self.agents:
+            if 'player_2' in current_agents:
                 terminations['player_2'] = p2_terminated
         else:
-            terminations = {a: terminated for a in self.agents}
-        truncations = {a: False for a in self.agents}
+            terminations = {a: terminated for a in current_agents}
+        truncations = {a: episode_truncated for a in current_agents}
 
         # Observations and infos
         if self.frame_stack > 0:
             self.observation_stack = np.roll(self.observation_stack, shift=-1, axis=0)
             self.observation_stack[-1] = obs
             obs = self.observation_stack
+        
         if self.agent_identifiers:
-            observations = {a: self._encode_agent_id(obs, a) for a in self.agents}
+            observations = {a: self._encode_agent_id(obs, a) for a in current_agents}
         else:
-            observations = {a: obs for a in self.agents}
-        infos = {a: {} for a in self.agents}
+            observations = {a: obs for a in current_agents}
+        infos = {a: {} for a in current_agents}
 
-        # Live agents
+        # Update live agents AFTER building the return dictionaries
         self.agents = [a for a in self.agents if not (terminations[a] or truncations[a])]
 
         return observations, rewards, terminations, truncations, infos
