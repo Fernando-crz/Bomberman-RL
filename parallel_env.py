@@ -1,5 +1,6 @@
 from gymnasium.spaces import Discrete, Box, MultiBinary
 from pettingzoo import ParallelEnv
+from pettingzoo.test import parallel_api_test
 import numpy as np
 
 HEIGHT, WIDTH, CHANNELS = 192, 256, 3 
@@ -16,10 +17,9 @@ class BombermanParallelEnv(ParallelEnv):
         self.agents = self.possible_agents[:]
 
         self.action_spaces = {
-            "player_0": MultiBinary(12),
-            "player_1": MultiBinary(12),
+            "player_0": Discrete(10),
+            "player_1": Discrete(10),
         }
-
 
         self.observation_spaces = {
             "player_0": Box(
@@ -55,8 +55,8 @@ class BombermanParallelEnv(ParallelEnv):
     
     def step(self, actions):
         joint_action = np.concatenate([
-            actions["player_0"],
-            actions["player_1"]
+            self.decode_action(actions["player_0"]),
+            self.decode_action(actions["player_1"])
         ]).astype(np.int8)
 
         obs, _, _, _, info = self.retro_env.step(joint_action)
@@ -94,6 +94,45 @@ class BombermanParallelEnv(ParallelEnv):
         }
 
         return observations, rewards, terminations, truncations, infos
+    
+    def decode_action(self, action):
+        buttons = np.zeros(12, dtype=np.int8)
+
+        if action == 0:
+            pass  # NOOP
+
+        elif action == 1:      # UP
+            buttons[4] = 1
+
+        elif action == 2:      # DOWN
+            buttons[5] = 1
+
+        elif action == 3:      # LEFT
+            buttons[6] = 1
+
+        elif action == 4:      # RIGHT
+            buttons[7] = 1
+
+        elif action == 5:      # BOMB
+            buttons[8] = 1
+
+        elif action == 6:      # UP + BOMB
+            buttons[4] = 1
+            buttons[8] = 1
+
+        elif action == 7:      # DOWN + BOMB
+            buttons[5] = 1
+            buttons[8] = 1
+
+        elif action == 8:      # LEFT + BOMB
+            buttons[6] = 1
+            buttons[8] = 1
+
+        elif action == 9:      # RIGHT + BOMB
+            buttons[7] = 1
+            buttons[8] = 1
+        
+        return buttons
     
     def compute_terminations(self, info):
         is_game_over = info.get("total_player_count") == 1 or info.get("active_player_count") == 0 
@@ -139,16 +178,18 @@ def main():
     
     obs, info = parallel_env.reset()
 
-    for i in range(10):
-        actions = {
-            "player_0": parallel_env.action_spaces["player_0"].sample(),
-            "player_1": parallel_env.action_spaces["player_1"].sample(),
-        }
-        obs, rewards, terminations, truncations, infos = parallel_env.step(actions)
-        print(f"\n\n=\n, rewards:{rewards}\n, terminations:{terminations}\n, truncations:{truncations}\n, infos:{infos}\n")
+    # for i in range(10):
+    #     actions = {
+    #         "player_0": parallel_env.action_spaces["player_0"].sample(),
+    #         "player_1": parallel_env.action_spaces["player_1"].sample(),
+    #     }
+    #     obs, rewards, terminations, truncations, infos = parallel_env.step(actions)
+    #     print(f"\n\n=\n, rewards:{rewards}\n, terminations:{terminations}\n, truncations:{truncations}\n, infos:{infos}\n")
 
-        if not parallel_env.agents:
-            obs, infos = parallel_env.reset()
+    #     if not parallel_env.agents:
+    #         obs, infos = parallel_env.reset()
+
+    parallel_api_test(parallel_env, num_cycles=10_000)
 
 if __name__ == "__main__":
     main()
