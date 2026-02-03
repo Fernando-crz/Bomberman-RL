@@ -10,8 +10,9 @@ HEIGHT, WIDTH, CHANNELS = 192, 256, 3
 class BombermanParallelEnv(ParallelEnv):
     metadata = {"render_modes": ["human", "rgb_array"]}
     
-    def __init__(self, retro_env):
+    def __init__(self, retro_env, render_mode="rgb_array", max_episode_steps=None):
         self.retro_env = retro_env
+        self.render_mode = render_mode
         
         self.possible_agents = ["player_0", "player_1"]
         self.agents = self.possible_agents[:]
@@ -35,6 +36,9 @@ class BombermanParallelEnv(ParallelEnv):
                 dtype=np.uint8
             ),
         }
+
+        self.max_episode_steps = max_episode_steps
+        self.step_num = 0
     
     def reset(self, seed=None, options=None):
         obs, info = self.retro_env.reset()
@@ -48,12 +52,16 @@ class BombermanParallelEnv(ParallelEnv):
 
         infos = {agent: {} for agent in self.agents}
 
+        self.step_num = 0
+
         return observations, infos
     
     def close(self):
         self.retro_env.close()
     
     def step(self, actions):
+        self.step_num += 1
+
         joint_action = np.concatenate([
             self.decode_action(actions["player_0"]),
             self.decode_action(actions["player_1"])
@@ -75,7 +83,8 @@ class BombermanParallelEnv(ParallelEnv):
         # Compute Terminations/Truncations
 
         terminations = self.compute_terminations(info)
-        truncations = {agent:False for agent in self.agents} # Never truncate since game will end before going over too many its.
+        is_truncated = self.max_episode_steps is not None and self.step_num > self.max_episode_steps 
+        truncations = {agent:is_truncated for agent in self.agents}
         
         self.agents = [
             agent for agent in self.agents
